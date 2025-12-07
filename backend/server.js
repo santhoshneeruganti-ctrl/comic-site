@@ -1,28 +1,28 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const multer = require("multer");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// middlewares
 app.use(cors());
 app.use(express.json());
 
-// serve uploaded files
+// ---------- Upload folder setup ----------
 const uploadFolder = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadFolder)) {
+  fs.mkdirSync(uploadFolder, { recursive: true });
+}
 app.use("/uploads", express.static(uploadFolder));
 
-// multer setup for PDF upload
 const upload = multer({
   dest: uploadFolder,
-  limits: {
-    fileSize: 20 * 1024 * 1024, // 20 MB max per file
-  },
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
-// dummy comics data (from before)
+// ---------- Static comics (old ones) ----------
 let comics = [
   {
     _id: "1",
@@ -38,58 +38,88 @@ let comics = [
   },
 ];
 
-// uploaded comics list (PDFs)
-let uploadedComics = [];
+// ---------- Uploaded comics (PDFs) ----------
+let uploadedComics = []; // {id,title,fileUrl,originalName,filePath,createdAt}
 
 let feedbacks = [];
 
-// test route
 app.get("/", (req, res) => {
   res.send("Comic backend running 😎");
 });
 
-// get default comics
+// GET static comics
 app.get("/api/comics", (req, res) => {
   res.json(comics);
 });
 
-// get uploaded comics
+// GET uploaded comics list
 app.get("/api/uploaded-comics", (req, res) => {
-  res.json(uploadedComics);
+  // filePath send cheyyakunda filter chestunnam
+  const publicList = uploadedComics.map(({ filePath, ...rest }) => rest);
+  res.json(publicList);
 });
 
-// upload comic PDF
+// POST upload new comic PDF
 app.post("/api/upload-comic", upload.single("file"), (req, res) => {
   const { title } = req.body;
   const file = req.file;
 
   if (!title || !file) {
-    return res
-      .status(400)
-      .json({ msg: "Title and PDF file are required." });
+    return res.status(400).json({ msg: "Title and PDF are required." });
   }
 
-  // URL to access this file from frontend
+  const id = uploadedComics.length + 1;
   const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${file.filename}`;
 
   const newComic = {
-    id: uploadedComics.length + 1,
+    id,
     title,
     fileUrl,
     originalName: file.originalname,
+    filePath: file.path,
     createdAt: new Date().toISOString(),
   };
 
   uploadedComics.push(newComic);
-  console.log("New uploaded comic:", newComic);
+  console.log("Uploaded comic:", newComic);
 
   res.status(201).json({
     msg: "Comic uploaded successfully!",
-    comic: newComic,
+    comic: {
+      id: newComic.id,
+      title: newComic.title,
+      fileUrl: newComic.fileUrl,
+      originalName: newComic.originalName,
+      createdAt: newComic.createdAt,
+    },
   });
 });
 
-// feedback route
+// DELETE uploaded comic
+app.delete("/api/uploaded-comics/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const index = uploadedComics.findIndex((c) => c.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ msg: "Comic not found." });
+  }
+
+  const comic = uploadedComics[index];
+
+  // delete file from disk (best effort)
+  if (comic.filePath && fs.existsSync(comic.filePath)) {
+    fs.unlink(comic.filePath, (err) => {
+      if (err) console.error("Error deleting file:", err);
+    });
+  }
+
+  uploadedComics.splice(index, 1);
+  console.log("Deleted comic:", comic);
+
+  res.json({ msg: "Comic deleted successfully." });
+});
+
+// FEEDBACK route
 app.post("/api/feedback", (req, res) => {
   const { name, message } = req.body;
 

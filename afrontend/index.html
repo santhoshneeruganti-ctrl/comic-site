@@ -2,90 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Comic Universe</title>
+  <title>Agent Santhosh – Comic HQ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Simple styling -->
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header class="header">
-    <h1 class="title">My Comic Universe</h1>
+  <header class="nav">
+    <div class="logo">⚡ Agent Comics HQ</div>
+    <nav>
+      <a href="#comics">Comics</a>
+      <a href="#upload">Upload</a>
+      <a href="#feedback">Feedback</a>
+    </nav>
   </header>
 
-  <main class="main">
-    <!-- Intro -->
-    <section class="intro">
-      <h2>Welcome, Agent Santhosh!</h2>
-      <p>
-        This is your comic-style website. Click the button below to load the latest comics
-        from your secret backend server.
-      </p>
-    </section>
-
-    <!-- Comics section -->
-    <section class="comics-section">
-      <div class="section-header">
-        <h2>Latest Comics</h2>
-        <button id="load-comics-btn" class="btn">
-          Load Comics
-        </button>
-      </div>
-
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Welcome, Agent Santhosh!</h1>
+      <p>Create, upload, and control your own comic universe.</p>
+      <button id="load-comics-btn" class="btn primary">Enter Comic Vault</button>
       <p id="status-message" class="status"></p>
+    </div>
+  </section>
 
-      <div id="comic-list" class="comic-list">
-        <!-- Cards from JS will appear here -->
-      </div>
-    </section>
-    <!-- Upload Comic Section -->
-<section class="upload-section">
-  <h2>Upload Your Comic (PDF)</h2>
-  <p>Select your PDF comic and give it a title.</p>
+  <!-- Comics List -->
+  <section id="comics" class="panel">
+    <h2>🎴 Latest Comics</h2>
+    <div id="comic-list" class="comic-grid">
+      <!-- cards from JS -->
+    </div>
+  </section>
 
-  <input type="text" id="upload-title" placeholder="Comic title" />
-  <input type="file" id="upload-file" accept="application/pdf" />
+  <!-- Upload Section -->
+  <section id="upload" class="panel">
+    <h2>📤 Upload Your Comic (PDF)</h2>
+    <p class="subtitle">
+      Give your comic a title, choose a PDF, and upload. You can delete it any time.
+    </p>
 
-  <button id="upload-btn" class="btn">Upload Comic</button>
+    <div class="upload-form">
+      <input type="text" id="upload-title" placeholder="Comic title" />
+      <input type="file" id="upload-file" accept="application/pdf" />
+      <button id="upload-btn" class="btn secondary">Upload Comic</button>
+    </div>
 
-  <p id="upload-status" class="status"></p>
+    <p id="upload-status" class="status"></p>
 
-  <h3>Uploaded Comics</h3>
-  <ul id="uploaded-list"></ul>
-</section>
+    <h3>📚 Uploaded Comics</h3>
+    <ul id="uploaded-list" class="uploaded-list">
+      <!-- filled by JS -->
+    </ul>
+  </section>
 
+  <!-- Feedback Section -->
+  <section id="feedback" class="panel">
+    <h2>💬 Send Feedback to HQ</h2>
 
-    <!-- Feedback section -->
-    <section class="feedback-section">
-      <h2>Send Feedback to HQ</h2>
+    <div class="feedback-form">
+      <input type="text" id="agent-name" placeholder="Your name (optional)" />
+      <textarea id="agent-feedback" rows="3"
+        placeholder="Tell HQ what you think about the comics..."></textarea>
+      <button id="feedback-btn" class="btn primary">Send Feedback</button>
+    </div>
 
-      <div class="feedback-form">
-        <input
-          type="text"
-          id="agent-name"
-          placeholder="Your name (optional)"
-        />
-
-        <textarea
-          id="agent-feedback"
-          rows="3"
-          placeholder="Your feedback about the comics..."
-        ></textarea>
-
-        <button id="feedback-btn" class="btn">
-          Send Feedback
-        </button>
-      </div>
-
-      <p id="feedback-status" class="status"></p>
-    </section>
-  </main>
+    <p id="feedback-status" class="status"></p>
+  </section>
 
   <footer class="footer">
-    <p>© 2025 My Comic Universe</p>
+    <p>© 2025 Agent Santhosh Comic HQ</p>
   </footer>
 
-  <!-- Main JS -->
   <script src="js/main.js"></script>
 </body>
 </html>

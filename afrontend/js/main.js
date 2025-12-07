@@ -1,4 +1,4 @@
-// Use your Render backend URL (LIVE server)
+// Render backend URL
 const BASE_URL = "https://comic-backend-cy7c.onrender.com";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -6,29 +6,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const comicList = document.getElementById("comic-list");
   const statusMessage = document.getElementById("status-message");
 
-  const nameInput = document.getElementById("agent-name");
-  const feedbackInput = document.getElementById("agent-feedback");
-  const feedbackBtn = document.getElementById("feedback-btn");
-  const feedbackStatus = document.getElementById("feedback-status");
-
   const uploadTitle = document.getElementById("upload-title");
   const uploadFile = document.getElementById("upload-file");
   const uploadBtn = document.getElementById("upload-btn");
   const uploadStatus = document.getElementById("upload-status");
   const uploadedList = document.getElementById("uploaded-list");
 
-  // ---- Load comics from backend ----
+  const nameInput = document.getElementById("agent-name");
+  const feedbackInput = document.getElementById("agent-feedback");
+  const feedbackBtn = document.getElementById("feedback-btn");
+  const feedbackStatus = document.getElementById("feedback-status");
+
+  // ---------- Load static comics ----------
   async function loadComics() {
     statusMessage.textContent = "Loading comics from HQ…";
-    statusMessage.className = "status info";
 
     try {
       const res = await fetch(`${BASE_URL}/api/comics`);
-      if (!res.ok) throw new Error("Failed to fetch comics");
+      if (!res.ok) throw new Error();
 
       const comics = await res.json();
-
       comicList.innerHTML = "";
+
       comics.forEach((comic) => {
         const card = document.createElement("article");
         card.className = "comic-card";
@@ -40,26 +39,24 @@ document.addEventListener("DOMContentLoaded", () => {
         comicList.appendChild(card);
       });
 
-      statusMessage.textContent = "Comics loaded successfully ✅";
-      statusMessage.className = "status success";
-    } catch (err) {
-      console.error(err);
-      statusMessage.textContent = "Failed to load comics. Try again later ❌";
-      statusMessage.className = "status error";
+      statusMessage.textContent = "Comics loaded ✅";
+    } catch (e) {
+      console.error(e);
+      statusMessage.textContent = "Failed to load comics ❌";
     }
   }
 
-  // ---- Load uploaded PDF comics list ----
+  // ---------- Load uploaded comics ----------
   async function loadUploadedComics() {
-    if (!uploadedList) return;
-
-    uploadedList.innerHTML = "<li>Loading uploaded comics...</li>";
+    uploadedList.innerHTML = "<li>Loading uploaded comics…</li>";
 
     try {
       const res = await fetch(`${BASE_URL}/api/uploaded-comics`);
-      const data = await res.json();
+      if (!res.ok) throw new Error();
 
+      const data = await res.json();
       uploadedList.innerHTML = "";
+
       if (!data.length) {
         uploadedList.innerHTML = "<li>No uploaded comics yet.</li>";
         return;
@@ -68,65 +65,91 @@ document.addEventListener("DOMContentLoaded", () => {
       data.forEach((comic) => {
         const li = document.createElement("li");
         li.innerHTML = `
-          <a href="${comic.fileUrl}" target="_blank">
-            📘 ${comic.title}
-          </a>`;
+          <span>
+            📘 <a href="${comic.fileUrl}" target="_blank">
+              ${comic.title}
+            </a>
+          </span>
+          <button class="btn danger btn-delete" data-id="${comic.id}">
+            Delete
+          </button>
+        `;
         uploadedList.appendChild(li);
       });
-    } catch (err) {
-      console.error(err);
-      uploadedList.innerHTML = "<li>Failed to load files ❌</li>";
+
+      // attach delete listeners
+      document.querySelectorAll(".btn-delete").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          if (!confirm("Delete this comic, agent?")) return;
+
+          try {
+            const res = await fetch(
+              `${BASE_URL}/api/uploaded-comics/${id}`,
+              { method: "DELETE" }
+            );
+            if (!res.ok) throw new Error();
+
+            loadUploadedComics();
+          } catch (e) {
+            alert("Delete failed ❌");
+          }
+        });
+      });
+    } catch (e) {
+      console.error(e);
+      uploadedList.innerHTML = "<li>Failed to load uploaded comics ❌</li>";
     }
   }
 
-  // ---- Upload PDF to backend ----
+  // ---------- Upload new comic ----------
   async function uploadComic() {
-    if (!uploadTitle.value || !uploadFile.files[0]) {
-      uploadStatus.textContent = "Please enter title and choose a PDF ❌";
-      uploadStatus.className = "status error";
+    const title = uploadTitle.value.trim();
+    const file = uploadFile.files[0];
+
+    if (!title || !file) {
+      uploadStatus.textContent = "Enter title and choose a PDF ❗";
+      return;
+    }
+    if (file.type !== "application/pdf") {
+      uploadStatus.textContent = "Only PDF files are allowed ❌";
       return;
     }
 
     uploadStatus.textContent = "Uploading…";
-    uploadStatus.className = "status info";
 
     const formData = new FormData();
-    formData.append("title", uploadTitle.value);
-    formData.append("file", uploadFile.files[0]);
+    formData.append("title", title);
+    formData.append("file", file);
 
     try {
       const res = await fetch(`${BASE_URL}/api/upload-comic`, {
         method: "POST",
         body: formData,
       });
+      const data = await res.json();
 
-      if (res.ok) {
-        uploadStatus.textContent = "Comic uploaded successfully ✔️";
-        uploadStatus.className = "status success";
-
-        uploadTitle.value = "";
-        uploadFile.value = "";
-
-        loadUploadedComics();
-      } else {
-        uploadStatus.textContent = "Upload failed ❌";
-        uploadStatus.className = "status error";
+      if (!res.ok) {
+        uploadStatus.textContent = data.msg || "Upload failed ❌";
+        return;
       }
-    } catch (err) {
+
+      uploadStatus.textContent = data.msg || "Uploaded ✅";
+      uploadTitle.value = "";
+      uploadFile.value = "";
+      loadUploadedComics();
+    } catch (e) {
+      console.error(e);
       uploadStatus.textContent = "Server error ❌";
-      uploadStatus.className = "status error";
-      console.error(err);
     }
   }
 
-  // ---- Send feedback to backend ----
+  // ---------- Feedback ----------
   async function sendFeedback() {
     const name = nameInput.value.trim();
     const message = feedbackInput.value.trim();
-
     if (!message) {
-      feedbackStatus.textContent = "Enter feedback ❗";
-      feedbackStatus.className = "status error";
+      feedbackStatus.textContent = "Enter your feedback ❗";
       return;
     }
 
@@ -137,30 +160,32 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ name, message }),
       });
 
-      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) {
+        feedbackStatus.textContent = data.msg || "Failed ❌";
+        return;
+      }
 
-      feedbackStatus.textContent = "Feedback sent 😎";
-      feedbackStatus.className = "status success";
-
-      feedbackInput.value = "";
+      feedbackStatus.textContent = data.msg || "Feedback sent ✅";
       nameInput.value = "";
-    } catch {
-      feedbackStatus.textContent = "Failed to send feedback ❌";
-      feedbackStatus.className = "status error";
+      feedbackInput.value = "";
+    } catch (e) {
+      console.error(e);
+      feedbackStatus.textContent = "Server error ❌";
     }
   }
 
-  // ---- EVENT LISTENERS ----
-  if (loadBtn)
+  // ---------- Event Listeners ----------
+  if (loadBtn) {
     loadBtn.addEventListener("click", () => {
       loadComics();
       loadUploadedComics();
     });
+  }
 
   if (uploadBtn) uploadBtn.addEventListener("click", uploadComic);
-
   if (feedbackBtn) feedbackBtn.addEventListener("click", sendFeedback);
 
-  // Load uploaded list on page load
+  // Initial load of uploaded comics
   loadUploadedComics();
 });
