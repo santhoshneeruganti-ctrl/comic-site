@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Comic Universe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- CSS file -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1 class="title">My Comic Universe</h1>
+  </header>
+
+  <main>
+    <!-- Static intro panel -->
+    <section class="intro">
+      <h2>Welcome, Agent!</h2>
+      <p>
+        This is your comic-style website. Scroll down to see the latest comics
+        loaded from the backend.
+      </p>
+    </section>
+
+    <!-- List loaded from backend -->
+    <section class="comics-section">
+      <div class="section-header">
+        <h2>Latest Comics</h2>
+        <button id="load-btn">Load Comics</button>
+      </div>
+
+      <div id="comic-list" class="comic-list">
+        <!-- JS will insert cards here -->
+      </div>
+
+      <p id="status" class="status"></p>
+    </section>
+
+    <!-- Feedback form -->
+    <section class="feedback-section">
+      <h2>Give Feedback</h2>
+      <form id="feedback-form">
+        <input type="text" id="name" placeholder="Your name (optional)" />
+        <textarea id="message" rows="3" placeholder="Your feedback..."></textarea>
+        <button type="submit">Send Feedback</button>
+      </form>
+      <p id="feedback-status" class="status"></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 My Comics</p>
+  </footer>
+
+  <!-- JS file -->
+  <script src="js/main.js"></script>
+</body>
+</html>
