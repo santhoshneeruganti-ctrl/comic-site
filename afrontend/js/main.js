@@ -17,8 +17,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedbackBtn = document.getElementById("feedback-btn");
   const feedbackStatus = document.getElementById("feedback-status");
 
+  // viewer elements
+  const viewerOverlay = document.getElementById("viewer-overlay");
+  const viewerFrame = document.getElementById("viewer-frame");
+  const viewerClose = document.getElementById("viewer-close");
+
   // ---------- Load static comics ----------
   async function loadComics() {
+    if (!statusMessage) return;
     statusMessage.textContent = "Loading comics from HQ…";
 
     try {
@@ -26,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error();
 
       const comics = await res.json();
+      if (!comicList) return;
+
       comicList.innerHTML = "";
 
       comics.forEach((comic) => {
@@ -48,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Load uploaded comics ----------
   async function loadUploadedComics() {
+    if (!uploadedList) return;
     uploadedList.innerHTML = "<li>Loading uploaded comics…</li>";
 
     try {
@@ -65,31 +74,47 @@ document.addEventListener("DOMContentLoaded", () => {
       data.forEach((comic) => {
         const li = document.createElement("li");
         li.innerHTML = `
-          <span>
-            📘 <a href="${comic.fileUrl}" target="_blank">
-              ${comic.title}
-            </a>
-          </span>
-          <button class="btn danger btn-delete" data-id="${comic.id}">
-            Delete
-          </button>
+          <span>📘 ${comic.title}</span>
+          <div>
+            <button class="btn secondary btn-view" data-url="${comic.fileUrl}">
+              View
+            </button>
+            <button class="btn danger btn-delete" data-id="${comic.id}">
+              Delete
+            </button>
+          </div>
         `;
         uploadedList.appendChild(li);
+      });
+
+      // attach view listeners
+      document.querySelectorAll(".btn-view").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const url = btn.getAttribute("data-url");
+          if (!url) return;
+          if (viewerFrame && viewerOverlay) {
+            viewerFrame.src = url;
+            viewerOverlay.classList.remove("hidden");
+          } else {
+            // fallback: open in new tab
+            window.open(url, "_blank");
+          }
+        });
       });
 
       // attach delete listeners
       document.querySelectorAll(".btn-delete").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-id");
-          if (!confirm("Delete this comic, agent?")) return;
+          if (!id) return;
+          const ok = confirm("Delete this comic, agent?");
+          if (!ok) return;
 
           try {
-            const res = await fetch(
-              `${BASE_URL}/api/uploaded-comics/${id}`,
-              { method: "DELETE" }
-            );
+            const res = await fetch(`${BASE_URL}/api/uploaded-comics/${id}`, {
+              method: "DELETE",
+            });
             if (!res.ok) throw new Error();
-
             loadUploadedComics();
           } catch (e) {
             alert("Delete failed ❌");
@@ -104,6 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Upload new comic ----------
   async function uploadComic() {
+    if (!uploadTitle || !uploadFile || !uploadStatus) return;
+
     const title = uploadTitle.value.trim();
     const file = uploadFile.files[0];
 
@@ -112,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     if (file.type !== "application/pdf") {
-      uploadStatus.textContent = "Only PDF files are allowed ❌";
+      uploadStatus.textContent = "Only PDF files allowed ❌";
       return;
     }
 
@@ -146,7 +173,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Feedback ----------
   async function sendFeedback() {
-    const name = nameInput.value.trim();
+    if (!feedbackInput || !feedbackStatus) return;
+
+    const name = nameInput ? nameInput.value.trim() : "";
     const message = feedbackInput.value.trim();
     if (!message) {
       feedbackStatus.textContent = "Enter your feedback ❗";
@@ -167,12 +196,28 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       feedbackStatus.textContent = data.msg || "Feedback sent ✅";
-      nameInput.value = "";
+      if (nameInput) nameInput.value = "";
       feedbackInput.value = "";
     } catch (e) {
       console.error(e);
       feedbackStatus.textContent = "Server error ❌";
     }
+  }
+
+  // ---------- Viewer close ----------
+  if (viewerClose && viewerOverlay && viewerFrame) {
+    viewerClose.addEventListener("click", () => {
+      viewerOverlay.classList.add("hidden");
+      viewerFrame.src = "";
+    });
+
+    // overlay click outside also close
+    viewerOverlay.addEventListener("click", (e) => {
+      if (e.target === viewerOverlay) {
+        viewerOverlay.classList.add("hidden");
+        viewerFrame.src = "";
+      }
+    });
   }
 
   // ---------- Event Listeners ----------
